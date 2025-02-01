@@ -108,10 +108,7 @@ export function CameraScreen() {
         tolerance: BOUNDARY_TOLERANCE
       });
 
-      if (!isInArea) {
-        console.log('Barcode rejected - outside scan area');
-        return;
-      }
+      if (!isInArea) return;
 
       console.log('Valid barcode - showing bottom sheet');
       setScannedData({
@@ -119,13 +116,6 @@ export function CameraScreen() {
         data: scanningResult.data
       });
       setIsBottomSheetVisible(true);
-
-      // Reset scanning after timeout
-      scanTimeout.current = setTimeout(() => {
-        console.log('Auto-resetting scanner after timeout');
-        setIsBottomSheetVisible(false);
-        scanTimeout.current = null;
-      }, 5000);
 
     } catch (error) {
       console.error('Scanning error:', error);
