@@ -4,7 +4,7 @@ import { BlurView } from 'expo-blur';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const SCANNER_WIDTH = SCREEN_WIDTH * 0.85;
-const SCANNER_HEIGHT = SCANNER_WIDTH * 0.6;
+const SCANNER_HEIGHT = SCANNER_WIDTH;
 const SCANNER_OFFSET = 40;
 
 export function ScannerOverlay() {
