@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert, Dimensions } from 'rea
 import { NavigationBar } from '../components/NavigationBar';
 import { FlipButton } from '../components/FlipButton';
 import { ScannerOverlay } from '../components/ScannerOverlay';
+import { BottomSheet } from '@rneui/themed';
 
 // Normalized overlay dimensions (0-1)
 const NORMALIZED_RECT_WIDTH = 0.8; // 80% of screen width
@@ -21,6 +22,8 @@ export function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const scanTimeout = useRef<NodeJS.Timeout | null>(null);
   const [scanned, setScanned] = useState(false);
+  const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false);
+  const [scannedData, setScannedData] = useState<{type: string, data: string} | null>(null);
 
   // Update scan area to be centered vertically
   const SCAN_AREA_PIXELS = {
@@ -110,27 +113,20 @@ export function CameraScreen() {
         return;
       }
 
-      console.log('Valid barcode - showing alert');
-      Alert.alert(
-        'Barcode Scanned',
-        `Type: ${type}\nData: ${data}`,
-        [{
-          text: 'OK', 
-          onPress: () => {
-            console.log('Alert dismissed - resetting scanner');
-            if (scanTimeout.current) clearTimeout(scanTimeout.current);
-            scanTimeout.current = setTimeout(() => {
-              console.log('Scan timeout expired - ready for new scans');
-              scanTimeout.current = null;
-            }, 2000);
-          }
-        }]
-      );
+      console.log('Valid barcode - showing bottom sheet');
+      setScannedData({
+        type: scanningResult.type,
+        data: scanningResult.data
+      });
+      setIsBottomSheetVisible(true);
 
+      // Reset scanning after timeout
       scanTimeout.current = setTimeout(() => {
         console.log('Auto-resetting scanner after timeout');
+        setIsBottomSheetVisible(false);
         scanTimeout.current = null;
-      }, 2000);
+      }, 5000);
+
     } catch (error) {
       console.error('Scanning error:', error);
     }
@@ -151,6 +147,36 @@ export function CameraScreen() {
         <FlipButton onPress={toggleCameraFacing} />
         <NavigationBar />
       </CameraView>
+      
+      <BottomSheet
+        isVisible={isBottomSheetVisible}
+        containerStyle={{ backgroundColor: 'white' }}
+        onBackdropPress={() => {
+          setIsBottomSheetVisible(false);
+          if (scanTimeout.current) clearTimeout(scanTimeout.current);
+          scanTimeout.current = null;
+        }}
+      >
+        <View style={sheetStyles.container}>
+          <Text style={sheetStyles.title}>Scanned Barcode</Text>
+          <Text style={sheetStyles.label}>Type:</Text>
+          <Text style={sheetStyles.value}>{scannedData?.type}</Text>
+          <Text style={sheetStyles.label}>Data:</Text>
+          <Text style={sheetStyles.value}>{scannedData?.data}</Text>
+          
+          <TouchableOpacity
+            style={sheetStyles.closeButton}
+            onPress={() => {
+              setIsBottomSheetVisible(false);
+              if (scanTimeout.current) clearTimeout(scanTimeout.current);
+              scanTimeout.current = null;
+            }}
+          >
+            <Text style={sheetStyles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </BottomSheet>
+
       <Text style={styles.scanText}>Scan a Barcode</Text>
     </View>
   );
@@ -188,4 +214,39 @@ const styles = StyleSheet.create({
     left: 4,
     top: 4
   }
+});
+
+const sheetStyles = StyleSheet.create({
+  container: {
+    padding: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#333',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 10,
+    color: '#666',
+  },
+  value: {
+    fontSize: 18,
+    marginBottom: 10,
+    color: '#444',
+  },
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: '#2196F3',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 }); 
